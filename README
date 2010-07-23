@@ -1,12 +1,16 @@
 Title: Canopy
 Author: Chris Hart
 Version: 0.2
-Hardware and software requirements
+=Requirements=
+	* Python < 2.6
 	* 2 servers: localhost and firewallhost
+	* Passwordless SSH from localhost -> firewallhost
+		--> easy setup with ssh-keygen
 
-Installation instructions, getting started tips, and documentation
+=Installation=
 	* All files go in localhost:/etc except canopy.rbl goes in firewallhost:/root
 		--> Place files according to canopy.conf
+	* /etc/canopy/canopy can be symlinked into init.d as required
 
 the.hippsta@gmail.com
 (c)2010 Chris Hart - Under GPLv2
