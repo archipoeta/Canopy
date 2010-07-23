@@ -202,26 +202,6 @@ class Canopy():
 		print "%s firewall flushed.. [OK]" % (fwhost)
 		self.writeLog(fwhost, "FLUSH", "Rules flushed, and default ruleset loaded")
 
-	def help(self):
-		"""The help menu"""
-		print """
-Usage: ./canopy [OPTIONS] [IPADDR]
-
-	:OPTIONS:
-	-a  | --accept		ACCEPT packets from IPADDR
-	-cn | --checkn		Check where IPADDR is from (country code)
-	-cb | --checkb		Check whether we have a BLOCK in place for IPPADDR
-	-d  | --drop		DROP packets from IPADDR
-	-f  | --flush		FLUSH firewall, and reload DEFAULT ruleset.
-
-	-h | --help			This help menu
-
-Usage: ./canopy
-
-Scans logs for failed logins and ./canopy -d IPADDR based on #failures
-assigned in canopy.conf, and an internal weight.
-More modularity to come.\n"""
-
 	def reverseList(self,list):
 		"""Custom reverse list() method"""
 		tsil = []
@@ -250,7 +230,8 @@ More modularity to come.\n"""
 		os.system("killall -9 canopy")
 
 	def GoBananas(self, pid, conf):
-		"""Canopy Daemon method: expects to be called by a fork()ed child of canopy.. loads and processes leaf configs, and monitors leaf logs accordingly"""
+		"""Canopy Daemon method: expects to be called by a fork()ed child of canopy..
+loads and processes leaf configs, and monitors leaf logs accordingly"""
 		start = self.touchLock(0)
 		beat = self.heartBeat(1)
 		leaf = os.path.basename(conf)
@@ -324,3 +305,23 @@ More modularity to come.\n"""
 						print err
 						self.writeLog("****", "ERROR", "Error blocking %s on %s : %s" % (ip, fwhost, err))
 					self.writeLog("NET", "DROP", "%s : Blocked on %s => {%s}" % (ip, fwhost, k))
+
+	def help(self):
+		"""The help menu"""
+		print """
+Usage: ./canopy [OPTIONS] [IPADDR]
+
+	:OPTIONS:
+	-a  | --accept		ACCEPT packets from IPADDR
+	-cn | --checkn		Check where IPADDR is from (country code)
+	-cb | --checkb		Check whether we have a BLOCK in place for IPPADDR
+	-d  | --drop		DROP packets from IPADDR
+	-f  | --flush		FLUSH firewall, and reload DEFAULT ruleset.
+
+	-h | --help			This help menu
+
+Usage: ./canopy
+
+Scans logs for failed logins and ./canopy -d IPADDR based on #failures
+assigned in canopy.conf, and an internal weight.
+More modularity to come.\n"""
