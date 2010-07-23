@@ -230,8 +230,7 @@ class Canopy():
 		os.system("killall -9 canopy")
 
 	def GoBananas(self, pid, conf):
-		"""Canopy Daemon method: expects to be called by a fork()ed child of canopy..
-loads and processes leaf configs, and monitors leaf logs accordingly"""
+		"""Expects to be called by a fork()ed child of canopy.. processes leaf configs, monitors leaflogs"""
 		start = self.touchLock(0)
 		beat = self.heartBeat(1)
 		leaf = os.path.basename(conf)
