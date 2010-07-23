@@ -1,0 +1,80 @@
+#!/usr/bin/python
+
+import os
+import re
+import sys
+import time
+basedir = os.getcwd()
+sys.path.append(basedir)
+
+from Canopy import *
+
+Canopy = Canopy()
+
+aregex = '\-a|\-\-accept|\-\-allow'
+cbregex = '\-cb|\-\-checkb|\-\-chkBlock'
+cnregex = '\-cn|\-\-checkn|\-\-chkNet'
+dregex = '\-d|\-\-drop|\-\-deny'
+fregex = '\-f|\-F|\-\-flush|\-\-free'
+startreg = '\-\-start|start'
+stopreg = '\-\-stop|stop'
+
+global case
+global ip
+
+if len(sys.argv) > 1:
+	case = sys.argv.pop(1)
+	ip = sys.argv.pop()
+
+	if not case:
+		case = ''
+	if not ip:
+		ip = ''
+
+	if re.search(aregex, case):
+		Canopy.accept(ip)
+	elif re.search(dregex, case):
+		Canopy.drop(ip)
+	elif re.search(cbregex, case):
+		Canopy.chkBlock(ip)
+	elif re.search(cnregex, case):
+		Canopy.chkNet(ip)
+	elif re.search(fregex, case):
+		Canopy.flush()
+	elif re.search("-h|--help", case):
+		Canopy.help()
+	elif re.search(stopreg, case):
+		Canopy.stop()
+	elif re.search(startreg, case):
+		if __name__ == "__main__":
+			pid = os.getpid() 
+			Canopy.writeLog("Local", "START", "Canopy Daemon PID %d started" % (pid))
+			print "Canopy Daemon PID %d" % pid 
+
+			ls = os.listdir(basedir + '/leaves')
+			for c in ls:
+				c = basedir + '/leaves/' + c
+#				try: 
+#					pid = os.fork() 
+#					if pid > 0:
+#						sys.exit(0) 
+#				except OSError, e:
+#					print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror)
+#					sys.exit(1)
+
+#				os.chdir("/")
+#				os.setsid()
+#				os.umask(0)
+
+				try: 
+					pid = os.fork()
+					if pid == 0:
+						pid = os.getpid()
+						Canopy.GoBananas(pid, c)
+						sys.exit(0) 
+				except OSError, e: 
+					print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror) 
+					sys.exit(1)
+
+else:
+	Canopy.help()

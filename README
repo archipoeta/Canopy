@@ -1,0 +1,12 @@
+Title: Canopy
+Author: Chris Hart
+Version: 0.2
+Hardware and software requirements
+	* 2 servers: localhost and firewallhost
+
+Installation instructions, getting started tips, and documentation
+	* All files go in localhost:/etc except canopy.rbl goes in firewallhost:/root
+		--> Place files according to canopy.conf
+
+the.hippsta@gmail.com
+(c)2010 Chris Hart - Under GPLv2
