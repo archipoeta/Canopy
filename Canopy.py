@@ -107,7 +107,7 @@ class Canopy():
 		if err:
 			return err
 
-	def chkBlock(self, ip):
+	def chkBlock(self, ip, x = None):
 		"""Check if ip is blocked on fwhost"""
 		a,b,c,d = ip.split(".")
 		t = "%s-save > /root/canopy/.canopy.tmp" % (iptablesbin)
@@ -115,13 +115,16 @@ class Canopy():
 		self.ssh2_exec(fwhost, t)
 		rules = self.ssh2_exec(fwhost, o)
 		if re.search("%s\.%s\.%s\.0[/\d{1,2}].+DROP" % (a,b,c), rules) or re.search("%s\.%s\.%s\.%s[/\d{1,2}].+DROP" % (a,b,c,d), rules):
-			print "[%s] is blocked on %s" % (ip, fwhost)
+			if x:
+				print "[%s] is blocked on %s" % (ip, fwhost)
 			return 1
 		elif re.search("%s\.%s\.%s\.0[/\d{1,2}].+ACCEPT" % (a,b,c), rules) or re.search("%s\.%s\.%s\.%s[/\d{1,2}].+ACCEPT" % (a,b,c,d), rules):
-			print "[%s] is actually WHITELISTED on %s believe it or not..." % (ip, fwhost)
+			if x:
+				print "[%s] is actually WHITELISTED on %s believe it or not..." % (ip, fwhost)
 			return 2
 		else:
-			print "[%s] is NOT blocked on %s." % (ip, fwhost)
+			if x:
+				print "[%s] is NOT blocked on %s." % (ip, fwhost)
 			return 0
 
 	def accept(self, ip):
@@ -139,7 +142,7 @@ class Canopy():
 		self.ssh2_exec(fwhost, cmd)
 		self.writeLog("NET", "ACCEPT", "%s : Whitelisted on %s" % (ip, fwhost))
 
-	def chkNet(self, ip):
+	def chkNet(self, ip, x = None):
 		"""Query hostip db for subnet locale"""
 		a,b,c,d = ip.split(".")
 		db = MySQLdb.connect(host="localhost", user="chkNet", passwd="h0st1p!", db="hostip")
@@ -151,10 +154,11 @@ class Canopy():
 		name = string.capwords(result[0][0])
 		code = result[0][1]
 		self.writeLog("NET", "CHECK", "%s : NetLocale => %s" % (ip, code))
-		print "[%s] hails from sunny %s" % (ip, name)
+		if x:
+			print "[%s] hails from sunny %s" % (ip, name)
 		return code
 
-	def drop(self, ip):
+	def drop(self, ip, x = None):
 		"""Permanently blacklist ip"""
 		b = self.chkBlock(ip)
 		if b == 1:
@@ -165,9 +169,10 @@ class Canopy():
 			ip += '/32'
 		cmd = "%s -I INPUT -s %s -j DROP" % (iptablesbin, ip)
 		os.system("echo %s >> %s" % (ip, black))
-		print "[%s] has been blocked on %s" % (ip, fwhost)
+		if x:
+			print "[%s] has been blocked on %s" % (ip, fwhost)
+			self.writeLog("NET", "DROP", "%s : Blocked on %s" % (ip, fwhost))
 		self.ssh2_exec(fwhost, cmd)
-		self.writeLog("NET", "DROP", "%s : Blocked on %s" % (ip, fwhost))
 
 	def flush(self):
 		"""Flush the firewall on fwhost, and reload canopy.rbl"""
@@ -202,6 +207,26 @@ class Canopy():
 		print "%s firewall flushed.. [OK]" % (fwhost)
 		self.writeLog(fwhost, "FLUSH", "Rules flushed, and default ruleset loaded")
 
+	def help(self):
+		"""The help menu"""
+		print """
+Usage: ./canopy [OPTIONS] [IPADDR]
+
+	:OPTIONS:
+	-a  | --accept		ACCEPT packets from IPADDR
+	-cn | --checkn		Check where IPADDR is from (country code)
+	-cb | --checkb		Check whether we have a BLOCK in place for IPPADDR
+	-d  | --drop		DROP packets from IPADDR
+	-f  | --flush		FLUSH firewall, and reload DEFAULT ruleset.
+
+	-h | --help			This help menu
+
+Usage: ./canopy
+
+Scans logs for failed logins and ./canopy -d IPADDR based on #failures
+assigned in canopy.conf, and an internal weight.
+More modularity to come.\n"""
+
 	def reverseList(self,list):
 		"""Custom reverse list() method"""
 		tsil = []
@@ -230,7 +255,7 @@ class Canopy():
 		os.system("killall -9 canopy")
 
 	def GoBananas(self, pid, conf):
-		"""Expects to be called by a fork()ed child of canopy.. processes leaf configs, monitors leaflogs"""
+		"""Canopy Daemon method: expects to be called by a fork()ed child of canopy.. loads and processes leaf configs, and monitors leaf logs accordingly"""
 		start = self.touchLock(0)
 		beat = self.heartBeat(1)
 		leaf = os.path.basename(conf)
@@ -300,27 +325,7 @@ class Canopy():
 						ip = ".".join(blocks)
 					xargs = "cd %s && ./canopy -d %s" % (basedir, ip)
 					err = os.popen(xargs).read()
-					if err:
-						print err
-						self.writeLog("****", "ERROR", "Error blocking %s on %s : %s" % (ip, fwhost, err))
+					#if err:
+					#	print err
+					#	self.writeLog("****", "ERROR", "Error blocking %s on %s : %s" % (ip, fwhost, err))
 					self.writeLog("NET", "DROP", "%s : Blocked on %s => {%s}" % (ip, fwhost, k))
-
-	def help(self):
-		"""The help menu"""
-		print """
-Usage: ./canopy [OPTIONS] [IPADDR]
-
-	:OPTIONS:
-	-a  | --accept		ACCEPT packets from IPADDR
-	-cn | --checkn		Check where IPADDR is from (country code)
-	-cb | --checkb		Check whether we have a BLOCK in place for IPPADDR
-	-d  | --drop		DROP packets from IPADDR
-	-f  | --flush		FLUSH firewall, and reload DEFAULT ruleset.
-
-	-h | --help			This help menu
-
-Usage: ./canopy
-
-Scans logs for failed logins and ./canopy -d IPADDR based on #failures
-assigned in canopy.conf, and an internal weight.
-More modularity to come.\n"""
